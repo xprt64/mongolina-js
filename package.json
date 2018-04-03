@@ -1,0 +1,23 @@
+{
+  "name": "dudulina-js-connector",
+  "version": "0.0.1",
+  "main": "src/index.js",
+  "author": "Constantin Galbenu <xprt64@gmail.com>",
+  "license": "MIT",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/xprt64/dudulina-js-connector.git"
+  },
+  "bugs": {
+    "url": "https://github.com/xprt64/dudulina-js-connector/issues"
+  },
+  "homepage": "https://github.com/xprt64/dudulina-js-connector#readme",
+  "description": "",
+  "dependencies": {
+    "mongo-oplog": "^2.1.0",
+    "mongodb": "^3.0.5"
+  }
+}
