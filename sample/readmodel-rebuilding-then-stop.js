@@ -17,13 +17,14 @@ connectToEventStore(process.env.CONNECT_STRING, process.env.OPLOG_CONNECT_STRING
             processedCount++;
             console.log(`processing event #${processedCount}`);
         })
-        .after(new MongoDB.Timestamp(1, 1522775897));
+        .stopAfterInitialProcessing();
 
     eventStore
         .subscribeReadModel(readModel)
         .run()
         .then(() => {
-            console.log(`processed events: ${processedCount}`);
+            console.log(`done processed ${processedCount} events`);
+            process.exit(0);
         });
 }).catch(err => {
     console.error(err);

@@ -6,10 +6,10 @@
 
 const MongoClient = require('mongodb').MongoClient;
 const MongoOplog = require('mongo-oplog');
-const EventStore = require('./eventStore');
+const EventStore = require('./EventStore');
 
 
-module.exports.connect = function (connectUrl = 'mongodb://localhost:27017/eventStore', oplogUrl = 'mongodb://localhost:27017/local') {
+function factoryEventStore(connectUrl, oplogUrl) {
     return new Promise(function (resolve, reject) {
         MongoClient.connect(connectUrl, (err, client) => {
             if (null !== err) {
@@ -22,23 +22,41 @@ module.exports.connect = function (connectUrl = 'mongodb://localhost:27017/event
 
             db.on('close', () => {
                 console.log('-> lost connection');
-                reject();
+                throw 'lost connection';
             });
 
             const oplogFactory = (sinceTimestamp) => {
-                const oplog = MongoOplog(oplogUrl, {ns: `eventStore.${dbNameFromUrlString(connectUrl)}`, since: sinceTimestamp});
-                oplog.on('error', error => reject(error));
-                oplog.on('end', reject);
+                const oplog = MongoOplog(oplogUrl, {
+                    ns: `eventStore.${dbNameFromUrlString(connectUrl)}`,
+                    since: sinceTimestamp
+                });
+                oplog.on('error', error => {
+                    throw `lost connection: ${error}`
+                });
+                oplog.on('end', () => {
+                    throw `oplog stream ended`
+                });
                 return oplog;
             };
 
-            resolve(new EventStore(db, oplogFactory, reject));
+            resolve(new EventStore(db, oplogFactory));
         });
     });
+}
+
+module.exports.connectToEventStore = function (connectUrl = 'mongodb://localhost:27017/eventStore', oplogUrl = 'mongodb://localhost:27017/local') {
+    return factoryEventStore(connectUrl, oplogUrl);
 };
 
-function dbNameFromUrlString(url)
-{
+module.exports.connectMultipleEventStores = function (eventStoreDescriptors) {
+    return Promise.all(
+        eventStoreDescriptors.map(
+            (eventStoreDescriptor) => factoryEventStore(eventStoreDescriptor.connectUrl, eventStoreDescriptor.oplogUrl)
+        )
+    );
+};
+
+function dbNameFromUrlString(url) {
     const matches = url.match(/mongodb:\/\/.*\/([0-9a-z\-]+)/i);
     return matches[1];
 }
