@@ -48,6 +48,77 @@ connectToEventStore(process.env.CONNECT_STRING, 'eventStore').then(function (eve
 	
 });
 ```
+
+The event stream of an DDD Aggregate can also be read, by loading all the previously emitted events, in the order they were emitted:
+
+```javascript
+const connectToEventStore = require('mongolina').connectToEventStoreAsAppender;
+
+connectToEventStore(process.env.CONNECT_STRING, 'eventStore').then(function (eventStore) {
+	
+    eventStore
+        .loadEvents(
+            '5acf5a1bf5926831065e1f9f',
+            'someAggregateType',
+            event => { //this is called for each event
+                console.log('loaded event from aggregate\'s stream' , event);
+            }
+        )
+        .then(aggregateVersion => console.log(aggregateVersion)) //after the events are loaded, you get the aggregateVersion
+	
+});
+```
+
+It's now trivial to load a DDD Aggregate from the Event store, isn't it?
+Let's look at a simple DDD Aggregate, that is rehydrated from the Event store,
+it executes a command and then the new emitted events are persisted to the Event store:
+
+```javascript
+const connectToEventStore = require('mongolina').connectToEventStoreAsAppender;
+
+connectToEventStore(process.env.CONNECT_STRING, 'eventStore').then(function (eventStore) {
+
+	const aggregate = {
+	    id: '5acf5a1bf5926831065e1f9f',
+	    type: 'someAggregate',
+		
+	    // event handlers
+	    somethingHappened: event => {
+	    	aggregate.someState = event.payload.someData;
+	    },
+	    somethingElseHappened: event => {
+	    	aggregate.someOtherState = event.payload.someOtherData;
+	    },
+	    
+	    // command handlers
+	    doSomething: what => ([{
+	    	whatIDid: `I did ${what}`
+	    }])
+	};
+
+    eventStore
+        .loadEvents(
+            aggregate.id,
+            aggregate.type,
+            event => {
+                aggregate[event.type](event); //we call the event handler method on the aggregate
+            }
+        )
+        .then(aggregateVersion => {
+            const newEvents = aggregate.doSomething('that is important');
+            
+            eventStore.appendEvents(
+                aggregate.id,
+                aggregate.type,
+                aggregateVersion,
+                newEvents
+            );
+        })
+})
+```
+
+You now have an Event-sourced DDD Aggregate.
+
 ## The events reader (AKA the ReadModel-updater)
  
 It fetches the events from the event store and calls the appropriate methods on the ReadModel.
