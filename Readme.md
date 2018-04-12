@@ -31,9 +31,9 @@ An example is given below:
 const connectToEventStore = require('mongolina').connectToEventStoreAsAppender;
 
 connectToEventStore(process.env.CONNECT_STRING, 'eventStore').then(function (eventStore) {
-    
-	eventStore.appendEvents(
-        '5acf5a1bf5926831065e1f9f', //aggregate Id
+	
+    eventStore.appendEvents(
+    	'5acf5a1bf5926831065e1f9f', //aggregate Id
         'someAggregateType',        //aggregate Type
         0,                          //expected version for optimistic concurrency
         [    
@@ -66,7 +66,6 @@ This is a [trivial example](https://github.com/xprt64/mongolina/blob/master/samp
  having the purpose to show how to connect to the Event Store and how to define a ReadModel-updater.
 
 ```javascript
-"use strict";
 const ReadModel = require("mongolina/ReadModel");
 const connectToEventStore = require('mongolina').connectToEventStore;
 const MongoDB = require('mongodb');
@@ -90,9 +89,6 @@ connectToEventStore(process.env.CONNECT_STRING, process.env.OPLOG_CONNECT_STRING
         .then(() => {
             console.log(`processed events: ${processedCount}`);
         });
-}).catch(err => {
-    console.error(err);
-    process.exit(1);
 });
 ```
 
@@ -148,8 +144,5 @@ connectMultipleEventStores(eventStores).then(function (eventStores) {
                 console.log(`done processed ${processedCount} events`);
             });
     });
-}).catch(err => {
-    console.error(err);
-    process.exit(1);
 });
 ```
