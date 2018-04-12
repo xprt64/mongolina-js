@@ -3,7 +3,7 @@
  */
 
 "use strict";
-const connectToEventStore = require('jslina').connectToEventStoreAsAppender;
+const connectToEventStore = require('eslina').connectToEventStoreAsAppender;
 
 connectToEventStore(process.env.CONNECT_STRING, 'eventStore').then(function (eventStore) {
 

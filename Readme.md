@@ -1,4 +1,4 @@
-# jslina = MongoDB Event store
+# eslina = MongoDB Event store
 
 This module permits building an event sourced application by appending events to a database and by reacting to those events.
 
@@ -11,7 +11,7 @@ The module has two sub-modules: the events appender and the events reader.
 ## Instalation
 
 ```bash
-npm install jslina --save
+npm install eslina --save
 ```
 
 ## The events appender
@@ -25,7 +25,7 @@ Events are totally ordered using the [MongoDB Timestamps](https://www.mongodb.co
 
 An example is below:
 ```javascript
-const connectToEventStore = require('jslina').connectToEventStoreAsAppender;
+const connectToEventStore = require('eslina').connectToEventStoreAsAppender;
 
 connectToEventStore(process.env.CONNECT_STRING, 'eventStore').then(function (eventStore) {
 
@@ -67,12 +67,12 @@ This behavior can be disabled by calling `Readmodel.stopAfterInitialProcessing()
 Below is an example of a Readmodel-updater that listen to the `SomethingWasDone` events and builds a local
 representation; more exactly, it counts the number of emitted events.
 
-This is a [trivial example](https://github.com/xprt64/jslina/blob/master/sample/read/simple-readmodel.js) with the purpose is to show how to connect to the Event store and how to define a Readmodel-updater.
+This is a [trivial example](https://github.com/xprt64/eslina/blob/master/sample/read/simple-readmodel.js) with the purpose is to show how to connect to the Event store and how to define a Readmodel-updater.
 
 ```javascript
 "use strict";
-const ReadModel = require("jslina/ReadModel");
-const connectToEventStore = require('jslina').connectToEventStore;
+const ReadModel = require("eslina/ReadModel");
+const connectToEventStore = require('eslina').connectToEventStore;
 const MongoDB = require('mongodb');
 
 let processedCount = 0;
@@ -117,8 +117,8 @@ a Promise that resolve to multiple EventStores, after all the connections are su
 
 ```javascript
 "use strict";
-const ReadModel = require("jslina/ReadModel");
-const connectMultipleEventStores = require('jslina').connectMultipleEventStores;
+const ReadModel = require("eslina/ReadModel");
+const connectMultipleEventStores = require('eslina').connectMultipleEventStores;
 const MongoDB = require('mongodb');
 
 let processedCount = 0;
