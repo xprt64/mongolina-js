@@ -3,122 +3,71 @@
  */
 "use strict";
 
-const Event = require('./dtos').Event;
-const Aggregate = require('./dtos').Aggregate;
-const EventMeta = require('./dtos').EventMeta;
+const ObjectID = require('mongodb').ObjectID;
+const Timestamp = require('mongodb').Timestamp;
+const eventsFromCommit = require("./Commit").eventsFromCommit;
+const crypto = require('crypto');
+
+function packEvents(events) {
+    return events.map(event => ({
+        eventClass: event.type || event.eventClass,
+        dump: event,
+        id: new ObjectID()
+    }));
+}
 
 class EventStore {
 
-    constructor(db, oplogFactory) {
-        this.collection = db.collection('eventStore');
-        this.lastTs = null;
-        this.readmodels = [];
-        this.oplogFactory = oplogFactory;
+    constructor(collection) {
+        this.collection = collection;
     }
 
-    subscribeReadModel(readmodel) {
-        this.readmodels.push(readmodel);
-        return this;
-    }
-
-    getEventTypes() {
-        return Array.from(this.readmodels.reduce((acc, readmodel) => {
-            readmodel.getEventTypes().map((eventType) => acc.add(eventType));
-            return acc;
-        }, new Set()));
-    }
-
-    after(timestamp) {
-        this.afterTimestamp = timestamp;
-        return this;
-    }
-
-    continueToListen() {
-        const oplog = this.oplogFactory(this.lastTs);
-        oplog.on('insert', doc => {
-            this.processDocument(doc.o)
+    appendEvents(aggregateId, aggregateType, expectedVersion, events, authenticatedUserId, commandMetadata) {
+        return this.collection.insert({
+            streamName: factoryStreamName(aggregateId, aggregateType),
+            aggregateId: aggregateId,
+            aggregateClass: aggregateType,
+            version: expectedVersion + 1,
+            ts: new Timestamp(0, 0),
+            createdAt: new Date(),
+            authenticatedUserId: authenticatedUserId,
+            commandMeta: commandMetadata,
+            events: packEvents(events)
         });
-        oplog.tail().catch(() => {
-            throw `tailing error`
-        });
-        return this;
     }
 
-    sendEventToReadmodels(event) {
-        this.readmodels.forEach((readmodel) => readmodel.processEvent(event));
-    }
+    loadEvents(aggregateId, aggregateType, eventCallback) {
+        const cursor = this.collection.find({
+            streamName: factoryStreamName(aggregateId, aggregateType)
+        }, {sort: {ts: 1}});
 
-    processDocument(document) {
-        eventsFromCommit(document).forEach((event) => this.sendEventToReadmodels(event));
-    }
-
-    getEarliestTimestap() {
-        return this.readmodels.reduce((acc, readmodel) => {
-            if (readmodel.getGreatestProcessedTimestamp()) {
-                if (!acc || readmodel.getGreatestProcessedTimestamp().lessThan(acc)) {
-                    return readmodel.getGreatestProcessedTimestamp();
-                }
-            }
-            return acc;
-        }, this.afterTimestamp);
-    }
-
-    run() {
         return new Promise((resolve, reject) => {
-            let query = {};
-            if (this.getEarliestTimestap()) {
-                query.ts = {'$gt': this.getEarliestTimestap()};
-            }
-            if (this.lastTs) {
-                query.ts = {'$gt': this.lastTs};
-            }
-            if (this.getEventTypes().length > 0) {
-                query['events.eventClass'] = {'$in': this.getEventTypes()};
-            }
+            let aggregateVersion;
 
-            const afterProcessing = () => {
-                if (this.shouldTail()) {
-                    this.continueToListen();
-                }
-                else {
-                    resolve();
-                }
-            };
-
-            const cursor = this.collection.find(query, {sort: {ts: 1}});
-            cursor.forEach((document) => this.processDocument(document), (err) => err === null ? afterProcessing() : reject(err));
+            cursor.forEach(
+                (document) => eventsFromCommit(document).forEach(event => {
+                    eventCallback(event);
+                    aggregateVersion = document.version;
+                }),
+                (err) => err === null ? resolve(aggregateVersion) : reject(err)
+            );
         });
     }
 
-    shouldTail() {
-        return this.readmodels.reduce((acc, readmodel) => {
-            return acc || readmodel.shouldRunContinuously();
-        }, false);
+    createStore() {
+        this.collection.createIndex({'streamName': 1, 'version': 1}, {'unique': true});
+        this.collection.createIndex({'events.eventClass': 1, 'ts': 1});
+        this.collection.createIndex({'ts': 1});
+        this.collection.createIndex({'events.id': 1});
     }
-}
 
-function eventsFromCommit(commitDocument) {
-    return commitDocument.events.map((eventSubDocument) => eventFromCommit(commitDocument, eventSubDocument));
-}
-
-function eventFromCommit(commitDocument, eventSubDocument) {
-    return new Event(
-        eventSubDocument.id,
-        eventSubDocument.eventClass,
-        eventSubDocument.dump,
-        new Aggregate(
-            commitDocument.aggregateId,
-            commitDocument.aggregateClass,
-            commitDocument.streamName,
-            commitDocument.version
-        ),
-        new EventMeta(
-            commitDocument.createdAt,
-            commitDocument.authenticatedUserId,
-            commitDocument.ts,
-            commitDocument.command
-        )
-    )
+    dropStore() {
+        this.collection.drop();
+    }
 }
 
 module.exports = EventStore;
+
+function factoryStreamName(aggregateId, aggregateType) {
+    return ObjectID.createFromHexString(crypto.createHash('sha256').update(aggregateType + aggregateId).digest('hex').substr(0, 24));
+}

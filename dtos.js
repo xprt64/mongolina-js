@@ -4,18 +4,18 @@
 
 "use strict";
 
-function Aggregate(id, type, stream, version) {
+function AggregateMeta(id, type, stream, version) {
     this.id = id;
     this.type = type;
     this.stream = stream;
     this.version = version;
 }
 
-function Event(id, type, payload, aggregate, meta) {
+function Event(id, type, payload, aggregateMeta, meta) {
     this.id = id;
     this.type = type;
     this.payload = payload;
-    this.aggregate = aggregate;
+    this.aggregateMeta = aggregateMeta;
     this.meta = meta;
 }
 
@@ -27,5 +27,5 @@ function EventMeta(createdAt, createdBy, ts, command) {
 }
 
 module.exports.Event = Event;
-module.exports.Aggregate = Aggregate;
+module.exports.AggregateMeta = AggregateMeta;
 module.exports.EventMeta = EventMeta;

@@ -6,6 +6,7 @@
 
 const MongoClient = require('mongodb').MongoClient;
 const MongoOplog = require('mongo-oplog');
+const EventStoreReader = require('./EventStoreReader');
 const EventStore = require('./EventStore');
 
 
@@ -39,13 +40,38 @@ function factoryEventStore(connectUrl, oplogUrl) {
                 return oplog;
             };
 
-            resolve(new EventStore(db, oplogFactory));
+            resolve(new EventStoreReader(db, oplogFactory));
+        });
+    });
+}
+
+function factoryEventStoreAppender(connectUrl, collectionName) {
+    return new Promise(function (resolve, reject) {
+        MongoClient.connect(connectUrl, (err, client) => {
+            if (null !== err) {
+                console.log(`Could not connect to server: ${err}`);
+                reject(err);
+                return;
+            }
+
+            const db = client.db(dbNameFromUrlString(connectUrl));
+
+            db.on('close', () => {
+                console.log('-> lost connection');
+                throw 'lost connection';
+            });
+
+            resolve(new EventStore(db.collection(collectionName)));
         });
     });
 }
 
 module.exports.connectToEventStore = function (connectUrl = 'mongodb://localhost:27017/eventStore', oplogUrl = 'mongodb://localhost:27017/local') {
     return factoryEventStore(connectUrl, oplogUrl);
+};
+
+module.exports.connectToEventStoreAsAppender = function (connectUrl = 'mongodb://localhost:27017/eventStore', collectionName) {
+    return factoryEventStoreAppender(connectUrl, collectionName);
 };
 
 module.exports.connectMultipleEventStores = function (eventStoreDescriptors) {
