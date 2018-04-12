@@ -3,7 +3,7 @@
  */
 
 "use strict";
-const connectToEventStore = require('eslina').connectToEventStoreAsAppender;
+const connectToEventStore = require('mongolina').connectToEventStoreAsAppender;
 
 connectToEventStore(process.env.CONNECT_STRING, 'eventStore').then(function (eventStore) {
 

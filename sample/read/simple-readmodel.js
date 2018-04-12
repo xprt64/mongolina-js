@@ -3,8 +3,8 @@
  */
 
 "use strict";
-const ReadModel = require("eslina/ReadModel");
-const connectToEventStore = require('eslina').connectToEventStore;
+const ReadModel = require("mongolina/ReadModel");
+const connectToEventStore = require('mongolina').connectToEventStore;
 const MongoDB = require('mongodb');
 
 let processedCount = 0;

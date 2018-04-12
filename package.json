@@ -1,5 +1,5 @@
 {
-  "name": "eslina",
+  "name": "mongolina",
   "version": "0.0.1",
   "main": "index.js",
   "author": "Constantin Galbenu <xprt64@gmail.com>",
@@ -18,12 +18,12 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/xprt64/eslina.git"
+    "url": "git+https://github.com/xprt64/mongolina.git"
   },
   "bugs": {
     "url": "https://github.com/xprt64/dudulina-js-connector/issues"
   },
-  "homepage": "https://github.com/xprt64/eslina#readme",
+  "homepage": "https://github.com/xprt64/mongolina#readme",
   "description": "",
   "dependencies": {
     "crypto": "^1.0.1",
