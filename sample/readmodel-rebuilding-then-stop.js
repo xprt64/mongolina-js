@@ -5,7 +5,6 @@
 "use strict";
 const ReadModel = require("../src/ReadModel");
 const connectToEventStore = require('../src/index').connectToEventStore;
-const MongoDB = require('mongodb');
 
 let processedCount = 0;
 

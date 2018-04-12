@@ -1,5 +1,5 @@
 {
-  "name": "dudulina-js-connector",
+  "name": "jslina",
   "version": "0.0.1",
   "main": "src/index.js",
   "author": "Constantin Galbenu <xprt64@gmail.com>",
@@ -9,12 +9,12 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/xprt64/dudulina-js-connector.git"
+    "url": "git+https://github.com/xprt64/jslina.git"
   },
   "bugs": {
     "url": "https://github.com/xprt64/dudulina-js-connector/issues"
   },
-  "homepage": "https://github.com/xprt64/dudulina-js-connector#readme",
+  "homepage": "https://github.com/xprt64/jslina#readme",
   "description": "",
   "dependencies": {
     "mongo-oplog": "^2.1.0",
