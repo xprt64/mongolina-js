@@ -1,7 +1,7 @@
 {
   "name": "jslina",
   "version": "0.0.5",
-  "main": "src/index.js",
+  "main": "index.js",
   "author": "Constantin Galbenu <xprt64@gmail.com>",
   "license": "MIT",
   "scripts": {

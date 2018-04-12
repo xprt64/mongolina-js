@@ -3,8 +3,8 @@
  */
 
 "use strict";
-const ReadModel = require("../ReadModel");
-const connectMultipleEventStores = require('../index').connectMultipleEventStores;
+const ReadModel = require("jslina/ReadModel");
+const connectMultipleEventStores = require('jslina').connectMultipleEventStores;
 const MongoDB = require('mongodb');
 
 let processedCount = 0;
