@@ -3,8 +3,8 @@
  */
 
 "use strict";
-const ReadModel = require("../src/ReadModel");
-const connectMultipleEventStores = require('../src/index').connectMultipleEventStores;
+const ReadModel = require("../ReadModel");
+const connectMultipleEventStores = require('../index').connectMultipleEventStores;
 const MongoDB = require('mongodb');
 
 let processedCount = 0;

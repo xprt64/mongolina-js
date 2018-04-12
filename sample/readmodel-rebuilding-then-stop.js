@@ -3,8 +3,8 @@
  */
 
 "use strict";
-const ReadModel = require("../src/ReadModel");
-const connectToEventStore = require('../src/index').connectToEventStore;
+const ReadModel = require("../ReadModel");
+const connectToEventStore = require('../index').connectToEventStore;
 
 let processedCount = 0;
 
