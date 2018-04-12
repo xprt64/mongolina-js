@@ -17,8 +17,8 @@ This is a [trivial example](https://github.com/xprt64/jslina/blob/master/sample/
 
 ```javascript
 "use strict";
-const ReadModel = require("../src/ReadModel");
-const connectToEventStore = require('../src/index').connectToEventStore;
+const ReadModel = require("jslina/ReadModel");
+const connectToEventStore = require('jslina').connectToEventStore;
 const MongoDB = require('mongodb');
 
 let processedCount = 0;
@@ -57,8 +57,8 @@ a Promise that resolve to multiple EventStores, after all the connections are su
 
 ```javascript
 "use strict";
-const ReadModel = require("../src/ReadModel");
-const connectMultipleEventStores = require('../src/index').connectMultipleEventStores;
+const ReadModel = require("jslina/ReadModel");
+const connectMultipleEventStores = require('jslina').connectMultipleEventStores;
 const MongoDB = require('mongodb');
 
 let processedCount = 0;
