@@ -1,12 +1,12 @@
-# mongolina = MongoDB Event store
+# mongolina = MongoDB Event Store
 
-This module permits building an event sourced application by appending events to a database and by reacting to those events.
+This module permits building an event-sourced application by appending events to a database and by reacting to those events.
 
-It is used in conjunction with Domain driven design (DDD) because each event is appended to an event stream and each event stream corresponds to an Aggregate instance (type and ID).
+It is used in conjunction with Domain driven design (DDD): each event is appended to an event stream and each event stream corresponds to an Aggregate instance (type and ID).
 
 For a PHP implementation please refer to [Dudulina CQRS Framework](https://github.com/xprt64/dudulina).
 
-The module has two sub-modules: the events appender and the events reader.
+The module has two sub-modules: the Events Appender and the Events Reader.
 
 ## Instalation
 
@@ -14,16 +14,19 @@ The module has two sub-modules: the events appender and the events reader.
 npm install mongolina --save
 ```
 
-## The events appender
+## The Events Appender
 
-It permits safely appending the events to an event stream (which corresponds to the tuple: aggregate ID x aggregate Type). 
-It uses optimistic locking to protect to concurrent access (it uses a `version` property); if concurrent access is detected, the Promise is rejected.
+It permits safely appending the events to an event stream (which corresponds to the tuple: (aggregate ID, aggregate Type)). 
+It uses optimistic locking to protect to concurrent access (it uses a `version` property); 
+if concurrent access is detected, the Promise is rejected. The client code could retry the operation.
 
-All the events are appended **atomically** as a MongoDB document, in this way no transactions are used. 
+All the events are appended **atomically** as a MongoDB document, in this way no transactions are used which helps building a scalable system. 
 
-Events are totally ordered using the [MongoDB Timestamps](https://www.mongodb.com/presentations/implementation-of-cluster-wide-causal-consistency-in-mongodb), which are unique and ever increasing per event store instance. 
+Events are totally ordered using the [MongoDB Timestamps](https://www.mongodb.com/presentations/implementation-of-cluster-wide-causal-consistency-in-mongodb), 
+which are unique and ever-increasing per Event Store instance. 
 
-An example is below:
+An example is given below:
+
 ```javascript
 const connectToEventStore = require('mongolina').connectToEventStoreAsAppender;
 
@@ -42,7 +45,6 @@ connectToEventStore(process.env.CONNECT_STRING, 'eventStore').then(function (eve
                 why: 'because of that'
             }
         ],
-        1,
         {command: 'testCommand'} //some optional command meta data
     )
         .then(res => console.log(res))
@@ -53,21 +55,22 @@ connectToEventStore(process.env.CONNECT_STRING, 'eventStore').then(function (eve
 
 });
 ```
-## The events reader (AKA the Readmodel-updater)
+## The events reader (AKA the ReadModel-updater)
  
-It fetches the events from the event store and calls the appropriate methods on the Readmodel.
+It fetches the events from the event store and calls the appropriate methods on the ReadModel.
 
-By default, the Readmodel continues to receive the new events even after all the previously emitted events are fetched 
-from the Event store; it does this by tailing the Event store's `oplog`.
+By default, the ReadModel continues to receive the new events even after all the previously emitted events are fetched 
+from the Event Store; it does this by tailing the Event Store's `oplog`.
 
-This behavior can be disabled by calling `Readmodel.stopAfterInitialProcessing()`.
+This behavior can be disabled by calling `ReadModel.stopAfterInitialProcessing()`.
 
-## Sample Readmodel-updater
+## Sample ReadModel-updater
 
-Below is an example of a Readmodel-updater that listen to the `SomethingWasDone` events and builds a local
+Below is an example of a ReadModel-updater that listens to the `SomethingWasDone` events and builds a local
 representation; more exactly, it counts the number of emitted events.
 
-This is a [trivial example](https://github.com/xprt64/mongolina/blob/master/sample/read/simple-readmodel.js) with the purpose is to show how to connect to the Event store and how to define a Readmodel-updater.
+This is a [trivial example](https://github.com/xprt64/mongolina/blob/master/sample/read/simple-readmodel.js),
+ having the purpose to show how to connect to the Event Store and how to define a ReadModel-updater.
 
 ```javascript
 "use strict";
@@ -82,6 +85,7 @@ connectToEventStore(process.env.CONNECT_STRING, process.env.OPLOG_CONNECT_STRING
 
     readModel
         .on("SomethigWasDone", (event) => {
+        	/** @var Event(id, type, payload, aggregateMeta, meta) event */
             processedCount++;
             console.log(`processing event #${processedCount}`);
         })
@@ -99,20 +103,21 @@ connectToEventStore(process.env.CONNECT_STRING, process.env.OPLOG_CONNECT_STRING
 });
 ```
 
-This can be very easy a microservice, with the purpose of keeping a CQRS Readmodel up-to-date. You can also put a HTTP interface in front of
-it in order to handle queries from clients.
+This can be very easy a microservice, with the purpose of keeping a CQRS ReadModel up-to-date. 
+You can also put a HTTP interface in front of it in order to handle queries from clients.
 
-This Readmodel-updater runs continuously until is stopped, by fetching the old events and by tailing the new events.
+This ReadModel-updater runs continuously until it is stopped, by fetching the old events 
+and by tailing the new events.
 
-You can run this example in a Docker container:
+You can run this example with the following command:
 
 ```bash
 CONNECT_STRING="mongodb://someUser:somePassword@eventStore:27017/eventStore" OPLOG_CONNECT_STRING="mongodb://someUser:somePassword@eventStore:27017/local" node simple-readmodel.js
 ```
 
-## Listening to multiple Event stores
+## Listening to multiple Event Stores
 
-If your Readmodel-updater needs events from multiple Event stores, you can use `connectMultipleEventStores` which returns
+If your ReadModel-updater needs events from multiple Event Stores, you can use `connectMultipleEventStores` which returns
 a Promise that resolve to multiple EventStores, after all the connections are successful.
 
 ```javascript

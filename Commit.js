@@ -22,7 +22,6 @@ function eventFromCommit(commitDocument, eventSubDocument) {
         ),
         new EventMeta(
             commitDocument.createdAt,
-            commitDocument.authenticatedUserId,
             commitDocument.ts,
             commitDocument.commandMeta
         )

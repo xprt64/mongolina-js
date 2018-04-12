@@ -22,7 +22,7 @@ class EventStore {
         this.collection = collection;
     }
 
-    appendEvents(aggregateId, aggregateType, expectedVersion, events, authenticatedUserId, commandMetadata) {
+    appendEvents(aggregateId, aggregateType, expectedVersion, events, commandMetadata) {
         return this.collection.insert({
             streamName: factoryStreamName(aggregateId, aggregateType),
             aggregateId: aggregateId,
@@ -30,7 +30,6 @@ class EventStore {
             version: expectedVersion + 1,
             ts: new Timestamp(0, 0),
             createdAt: new Date(),
-            authenticatedUserId: authenticatedUserId,
             commandMeta: commandMetadata,
             events: packEvents(events)
         });

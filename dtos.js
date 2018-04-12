@@ -19,9 +19,8 @@ function Event(id, type, payload, aggregateMeta, meta) {
     this.meta = meta;
 }
 
-function EventMeta(createdAt, createdBy, ts, command) {
+function EventMeta(createdAt, ts, command) {
     this.createdAt = createdAt;
-    this.createdBy = createdBy;
     this.ts = ts;
     this.command = command;
 }
