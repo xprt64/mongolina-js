@@ -1,12 +1,13 @@
 {
   "name": "jslina",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "main": "src/index.js",
   "author": "Constantin Galbenu <xprt64@gmail.com>",
   "license": "MIT",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
+  "keywords": ["event-store", "event-sourcing", "readmodel", "mongodb"],
   "repository": {
     "type": "git",
     "url": "git+https://github.com/xprt64/jslina.git"
