@@ -56,6 +56,12 @@ it in order to handle queries from clients.
 
 This Readmodel-updater runs continuously until is stopped, by fetching the old events and by tailing the new events.
 
+You can run this example in a Docker container:
+
+```bash
+CONNECT_STRING="mongodb://someUser:somePassword@eventStore:27017/eventStore" OPLOG_CONNECT_STRING="mongodb://someUser:somePassword@eventStore:27017/local" node simple-readmodel.js
+```
+
 ## Listening to multiple Event stores
 
 If your Readmodel-updater needs events from multiple Event stores, you can use `connectMultipleEventStores` which returns
