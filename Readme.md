@@ -31,28 +31,21 @@ An example is given below:
 const connectToEventStore = require('mongolina').connectToEventStoreAsAppender;
 
 connectToEventStore(process.env.CONNECT_STRING, 'eventStore').then(function (eventStore) {
-
-    //eventStore.createStore() //must be run onetime, on install
     
-    eventStore.appendEvents(
+	eventStore.appendEvents(
         '5acf5a1bf5926831065e1f9f', //aggregate Id
-        'someAggregate', //aggregate Type
-        0, //expected version
-        [   //event = plain old JavaScript object 
-            {
+        'someAggregateType',        //aggregate Type
+        0,                          //expected version for optimistic concurrency
+        [    
+            {//event = plain old JavaScript object
                 type: 'SomethingWasDone', //required field; you could also use 'eventClass' instead of 'type'
                 when: new Date(),
                 why: 'because of that'
             }
         ],
-        {command: 'testCommand'} //some optional command meta data
-    )
-        .then(res => console.log(res))
-        .catch(err => {
-            console.log(err.code, err.message);
-            process.exit(1);
-        })
-
+        {command: 'testCommand'}    //some optional command meta data
+    );
+	
 });
 ```
 ## The events reader (AKA the ReadModel-updater)
