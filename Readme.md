@@ -8,6 +8,12 @@ from the Event store; it does this by tailing the Event store.
 
 This behavior can be disabled by calling `Readmodel.stopAfterInitialProcessing()`.
 
+## Instalation
+
+```bash
+npm install jslina --save
+```
+
 ## Sample Readmodel-updater
 
 Below is an example of a Readmodel-updater that listen to the `SomethingWasDone` events and builds a local
