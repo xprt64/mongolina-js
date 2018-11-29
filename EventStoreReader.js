@@ -81,10 +81,9 @@ class EventStoreReader {
                 if (this.shouldTail()) {
                     this.log(`now, we are tailing...`);
                     this.continueToListen();
-                } else {
-                    resolve();
                 }
-            };
+                resolve();
+             };
             const cursor = this.collection.find(query, {sort: {ts: 1}});
             cursor.forEach((document) => this.processDocument(document), (err) => err === null ? afterProcessing() : reject(err));
         });

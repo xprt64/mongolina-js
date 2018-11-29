@@ -84,9 +84,8 @@ class EventLogReader {
                 if (this.shouldTail()) {
                     this.log(`now, we are tailing...`);
                     this.continueToListen();
-                } else {
-                    resolve();
                 }
+                resolve();
             };
             const cursor = this.collection.find(query, {sort: {ts: 1}});
             cursor.forEach((document) => {
@@ -101,7 +100,7 @@ class EventLogReader {
         }, false);
     }
 
-    log(what){
+    log(what) {
         console.log(`${this.name}#`, what);
     }
 }
