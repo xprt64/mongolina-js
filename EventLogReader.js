@@ -2,9 +2,11 @@
  * Copyright (c) 2018 Constantin Galbenu <gica.galbenu@gmail.com>
  */
 "use strict";
-const eventsFromCommit = require("./Commit").eventsFromCommit;
+const Event = require('./dtos').Event;
+const AggregateMeta = require('./dtos').AggregateMeta;
+const EventMeta = require('./dtos').EventMeta;
 
-class EventStoreReader {
+class EventLogReader {
 
     constructor(collection, oplogFactory, name) {
         this.name = name;
@@ -34,6 +36,7 @@ class EventStoreReader {
 
     continueToListen() {
         const oplog = this.oplogFactory(this.lastTs);
+
         oplog.on('insert', doc => {
             this.processDocument(doc.o)
         });
@@ -44,12 +47,12 @@ class EventStoreReader {
     }
 
     sendEventToReadmodels(event) {
-        this.countEvents++;
         this.readmodels.forEach((readmodel) => readmodel.processEvent(event));
     }
 
     processDocument(document) {
-        eventsFromCommit(document).forEach((event) => this.sendEventToReadmodels(event));
+        this.countEvents++;
+        this.sendEventToReadmodels(eventFromCommit(document));
     }
 
     getEarliestTimestap() {
@@ -73,7 +76,7 @@ class EventStoreReader {
                 query.ts = {'$gt': this.lastTs};
             }
             if (this.getEventTypes().length > 0) {
-                query['events.eventClass'] = {'$in': this.getEventTypes()};
+                query['eventClass'] = {'$in': this.getEventTypes()};
             }
 
             const afterProcessing = () => {
@@ -86,7 +89,9 @@ class EventStoreReader {
                 }
             };
             const cursor = this.collection.find(query, {sort: {ts: 1}});
-            cursor.forEach((document) => this.processDocument(document), (err) => err === null ? afterProcessing() : reject(err));
+            cursor.forEach((document) => {
+                this.processDocument(document)
+            }, (err) => err === null ? afterProcessing() : reject(err));
         });
     }
 
@@ -101,4 +106,25 @@ class EventStoreReader {
     }
 }
 
-module.exports = EventStoreReader;
+
+module.exports = EventLogReader;
+
+
+function eventFromCommit(document) {
+    return new Event(
+        document.eventId,
+        document.eventClass,
+        document.event,
+        new AggregateMeta(
+            document.aggregateId,
+            document.aggregateClass,
+            document.streamName,
+            document.version
+        ),
+        new EventMeta(
+            document.dateCreated,
+            document.ts,
+            document.commandMeta
+        )
+    )
+}

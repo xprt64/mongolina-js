@@ -5,7 +5,6 @@
 const OnlyOnceEnsurer = require("./OnlyOnceEnsurer");
 
 class ReadModel {
-
     constructor(options = {}) {
         this.options = {
             runContinuously: true
@@ -15,6 +14,18 @@ class ReadModel {
         this.onlyOnceEnsurer = new OnlyOnceEnsurer();
         this.callbacks = {};
         this.anyCallbacks = [];
+    }
+
+    async init(options){
+
+    }
+
+    needsCollection(){
+        return false;
+    }
+
+    needsDatabase(){
+        return false;
     }
 
     on(eventClass, callback) {

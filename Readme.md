@@ -172,7 +172,7 @@ and by tailing the new events.
 You can run this example with the following command:
 
 ```bash
-CONNECT_STRING="mongodb://someUser:somePassword@eventStore:27017/eventStore" OPLOG_CONNECT_STRING="mongodb://someUser:somePassword@eventStore:27017/local" node simple-readmodel.js
+CONNECT_STRING="mongodb://someUser:somePassword@eventStore:27017/eventStore" OPLOG_CONNECT_STRING="mongodb://someUser:somePassword@eventStore:27017/local" node simple-index.js
 ```
 
 ## Listening to multiple Event Stores
