@@ -14,6 +14,8 @@ class ReadModel {
         this.onlyOnceEnsurer = new OnlyOnceEnsurer();
         this.callbacks = {};
         this.anyCallbacks = [];
+        this.afterTimestamp = {};
+        this._tailingHasStarted = {};
     }
 
     async init(options){
@@ -49,8 +51,8 @@ class ReadModel {
         this.options.runContinuously = false;
         return this;
     }
-    after(timestamp) {
-        this.afterTimestamp = timestamp;
+    after(timestamp, eventSourceName) {
+        this.afterTimestamp[eventSourceName] = timestamp;
         return this;
     }
 
@@ -65,8 +67,8 @@ class ReadModel {
     /**
      * @returns {null|MongoDB.Timestamp}
      */
-    getGreatestProcessedTimestamp() {
-        return this.afterTimestamp;
+    async getGreatestProcessedTimestamp(eventSourceName) {
+        return this.afterTimestamp[eventSourceName];
     }
 
     isEventAlreadyProcessed(event) {
@@ -77,25 +79,28 @@ class ReadModel {
         this.onlyOnceEnsurer.markEventAsProcessed(event);
     }
 
-    processEvent(event) {
+    async processEvent(event) {
         if (this.isEventAlreadyProcessed(event)) {
             return;
         }
         this.markEventAsProcessed(event);
-        this._processEvent(event);
+        await this._processEvent(event);
     }
 
-    _processEvent(event) {
+    async _processEvent(event) {
         this.lastTs = event.meta.ts;
-
         if (this.callbacks[event.type]) {
-            this.callbacks[event.type].forEach(callback => {
-                callback(event);
-            })
+            await Promise.all( this.callbacks[event.type].map(callback => callback(event) ));
         }
-        this.anyCallbacks.forEach(callback => {
-            callback(event);
-        });
+        await Promise.all( this.anyCallbacks.map(callback => callback(event)) );
+    }
+
+    tailingStarted(source){
+        this._tailingHasStarted[source] = true;
+    }
+
+    hasTailingStarted(source){
+        return true === this._tailingHasStarted[source];
     }
 }
 

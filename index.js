@@ -14,7 +14,12 @@ const ReadModel = require('./ReadModel');
 
 function factoryEventStore({connectUrl, oplogUrl, collectionName = 'eventStore', name}) {
     return new Promise(function (resolve, reject) {
-        MongoClient.connect(connectUrl, (err, client) => {
+        const client = new MongoClient(connectUrl, {
+            reconnectTries: 30,
+            reconnectInterval: 1000,
+            useNewUrlParser: true
+        });
+        client.connect((err, client) => {
             if (null !== err) {
                 console.log(`Could not connect to server: ${err}`);
                 reject(err);
@@ -49,7 +54,12 @@ function factoryEventStore({connectUrl, oplogUrl, collectionName = 'eventStore',
 
 function factoryEventLog({connectUrl, oplogUrl, collectionName, name}) {
     return new Promise(function (resolve, reject) {
-        MongoClient.connect(connectUrl, (err, client) => {
+        const client = new MongoClient(connectUrl, {
+            reconnectTries: 30,
+            reconnectInterval: 1000,
+            useNewUrlParser: true
+        });
+        client.connect((err, client) => {
             if (null !== err) {
                 console.log(`Could not connect to server: ${err}`);
                 reject(err);

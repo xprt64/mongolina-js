@@ -4,12 +4,13 @@
 const Event = require('./dtos').Event;
 const AggregateMeta = require('./dtos').AggregateMeta;
 const EventMeta = require('./dtos').EventMeta;
+const EventSource = require('./dtos').EventSource;
 
-function eventsFromCommit(commitDocument) {
-    return commitDocument.events.map((eventSubDocument) => eventFromCommit(commitDocument, eventSubDocument));
+function eventsFromCommit(commitDocument, eventSourceName) {
+    return commitDocument.events.map((eventSubDocument) => eventFromCommit(commitDocument, eventSubDocument, eventSourceName));
 }
 
-function eventFromCommit(commitDocument, eventSubDocument) {
+function eventFromCommit(commitDocument, eventSubDocument, eventSourceName) {
     return new Event(
         eventSubDocument.id,
         eventSubDocument.eventClass,
@@ -24,6 +25,9 @@ function eventFromCommit(commitDocument, eventSubDocument) {
             commitDocument.createdAt,
             commitDocument.ts,
             commitDocument.commandMeta
+        ),
+        new EventSource(
+            eventSourceName
         )
     )
 }

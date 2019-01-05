@@ -40,53 +40,57 @@ class EventStoreReader {
         oplog.tail().catch((err) => {
             throw `tailing error: ${err}`
         });
-        return this;
     }
 
-    sendEventToReadmodels(event) {
+    async sendEventToReadmodels(event) {
         this.countEvents++;
-        this.readmodels.forEach((readmodel) => readmodel.processEvent(event));
+        await Promise.all(this.readmodels.map(async (readmodel) => await readmodel.processEvent(event)));
     }
 
-    processDocument(document) {
-        eventsFromCommit(document).forEach((event) => this.sendEventToReadmodels(event));
+    async notifyReadmodelsTailingStarted() {
+        await Promise.all(this.readmodels.map((readmodel) => 'tailingStarted' in readmodel ? readmodel.tailingStarted(this.name) : null));
     }
 
-    getEarliestTimestap() {
-        return this.readmodels.reduce((acc, readmodel) => {
-            if (readmodel.getGreatestProcessedTimestamp()) {
-                if (!acc || readmodel.getGreatestProcessedTimestamp().lessThan(acc)) {
-                    return readmodel.getGreatestProcessedTimestamp();
+    async processDocument(document) {
+        await Promise.all(eventsFromCommit(document, this.name).map(async (event) => await this.sendEventToReadmodels(event)));
+    }
+
+    async getEarliestTimestap() {
+        return this.readmodels.reduce(async (acc, readmodel) => {
+            let greatestProcessedTimestamp = await readmodel.getGreatestProcessedTimestamp(this.name);
+            if (greatestProcessedTimestamp) {
+                if (!acc || greatestProcessedTimestamp.lessThan(acc)) {
+                    return greatestProcessedTimestamp;
                 }
             }
             return acc;
         }, this.afterTimestamp);
     }
 
-    run() {
-        return new Promise((resolve, reject) => {
-            let query = {};
-            if (this.getEarliestTimestap()) {
-                query.ts = {'$gt': this.getEarliestTimestap()};
-            }
-            if (this.lastTs) {
-                query.ts = {'$gt': this.lastTs};
-            }
-            if (this.getEventTypes().length > 0) {
-                query['events.eventClass'] = {'$in': this.getEventTypes()};
-            }
+    async run() {
+        let query = {};
+        let earliestTimestap = await this.getEarliestTimestap();
+        if (earliestTimestap) {
+            query.ts = {'$gt': earliestTimestap};
+        }
+        if (this.lastTs) {
+            query.ts = {'$gt': this.lastTs};
+        }
+        if (this.getEventTypes().length > 0) {
+            query['events.eventClass'] = {'$in': this.getEventTypes()};
+        }
 
-            const afterProcessing = () => {
-                this.log(`done processing ${this.countEvents} events`);
-                if (this.shouldTail()) {
-                    this.log(`now, we are tailing...`);
-                    this.continueToListen();
-                }
-                resolve();
-             };
-            const cursor = this.collection.find(query, {sort: {ts: 1}});
-            cursor.forEach((document) => this.processDocument(document), (err) => err === null ? afterProcessing() : reject(err));
-        });
+        const cursor = this.collection.find(query, {sort: {ts: 1}});
+        while (await cursor.hasNext()) {
+            const document = await cursor.next();
+            await this.processDocument(document)
+        }
+        this.log(`done processing ${this.countEvents} events`);
+        await this.notifyReadmodelsTailingStarted();
+        if (this.shouldTail()) {
+            this.log(`now, we are tailing...`);
+            this.continueToListen();
+        }
     }
 
     shouldTail() {
@@ -95,7 +99,7 @@ class EventStoreReader {
         }, false);
     }
 
-    log(what){
+    log(what) {
         console.log(`${this.name}#`, what);
     }
 }

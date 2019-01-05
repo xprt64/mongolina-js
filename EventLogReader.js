@@ -5,6 +5,7 @@
 const Event = require('./dtos').Event;
 const AggregateMeta = require('./dtos').AggregateMeta;
 const EventMeta = require('./dtos').EventMeta;
+const EventSource = require('./dtos').EventSource;
 
 class EventLogReader {
 
@@ -36,62 +37,63 @@ class EventLogReader {
 
     continueToListen() {
         const oplog = this.oplogFactory(this.lastTs);
-
         oplog.on('insert', doc => {
             this.processDocument(doc.o)
         });
         oplog.tail().catch((err) => {
             throw `tailing error: ${err}`
         });
-        return this;
     }
 
     sendEventToReadmodels(event) {
-        this.readmodels.forEach((readmodel) => readmodel.processEvent(event));
+        return Promise.all(this.readmodels.map(async (readmodel) => await readmodel.processEvent(event)));
+    }
+
+    notifyReadmodelsTailingStarted() {
+        return Promise.all(this.readmodels.map((readmodel) => 'tailingStarted' in readmodel ? readmodel.tailingStarted(this.name) : null));
     }
 
     processDocument(document) {
         this.countEvents++;
-        this.sendEventToReadmodels(eventFromCommit(document));
+        return this.sendEventToReadmodels(this.eventFromCommit(document));
     }
 
-    getEarliestTimestap() {
-        return this.readmodels.reduce((acc, readmodel) => {
-            if (readmodel.getGreatestProcessedTimestamp()) {
-                if (!acc || readmodel.getGreatestProcessedTimestamp().lessThan(acc)) {
-                    return readmodel.getGreatestProcessedTimestamp();
+    async getEarliestTimestap() {
+        return this.readmodels.reduce(async (acc, readmodel) => {
+            let greatestProcessedTimestamp = await readmodel.getGreatestProcessedTimestamp(this.name);
+            if (greatestProcessedTimestamp) {
+                if (!acc || greatestProcessedTimestamp.lessThan(acc)) {
+                    return greatestProcessedTimestamp;
                 }
             }
             return acc;
         }, this.afterTimestamp);
     }
 
-    run() {
-        return new Promise((resolve, reject) => {
-            let query = {};
-            if (this.getEarliestTimestap()) {
-                query.ts = {'$gt': this.getEarliestTimestap()};
-            }
-            if (this.lastTs) {
-                query.ts = {'$gt': this.lastTs};
-            }
-            if (this.getEventTypes().length > 0) {
-                query['eventClass'] = {'$in': this.getEventTypes()};
-            }
+    async run() {
+        let query = {};
+        let earliestTimestap = await this.getEarliestTimestap();
+        if (earliestTimestap) {
+            query.ts = {'$gt': earliestTimestap};
+        }
+        if (this.lastTs) {
+            query.ts = {'$gt': this.lastTs};
+        }
+        if (this.getEventTypes().length > 0) {
+            query['eventClass'] = {'$in': this.getEventTypes()};
+        }
 
-            const afterProcessing = () => {
-                this.log(`done processing ${this.countEvents} events`);
-                if (this.shouldTail()) {
-                    this.log(`now, we are tailing...`);
-                    this.continueToListen();
-                }
-                resolve();
-            };
-            const cursor = this.collection.find(query, {sort: {ts: 1}});
-            cursor.forEach((document) => {
-                this.processDocument(document)
-            }, (err) => err === null ? afterProcessing() : reject(err));
-        });
+        const cursor = this.collection.find(query, {sort: {ts: 1}});
+        while (await cursor.hasNext()) {
+            const document = await cursor.next();
+            await this.processDocument(document)
+        }
+        this.log(`done processing ${this.countEvents} events`);
+        await this.notifyReadmodelsTailingStarted();
+        if (this.shouldTail()) {
+            this.log(`now, we are tailing...`);
+            this.continueToListen();
+        }
     }
 
     shouldTail() {
@@ -103,27 +105,28 @@ class EventLogReader {
     log(what) {
         console.log(`${this.name}#`, what);
     }
-}
 
+    eventFromCommit(document) {
+        return new Event(
+            document.eventId,
+            document.eventClass,
+            document.event,
+            new AggregateMeta(
+                document.aggregateId,
+                document.aggregateClass,
+                document.streamName,
+                document.version
+            ),
+            new EventMeta(
+                document.dateCreated,
+                document.ts,
+                document.commandMeta
+            ),
+            new EventSource(
+                this.name
+            )
+        )
+    }
+}
 
 module.exports = EventLogReader;
-
-
-function eventFromCommit(document) {
-    return new Event(
-        document.eventId,
-        document.eventClass,
-        document.event,
-        new AggregateMeta(
-            document.aggregateId,
-            document.aggregateClass,
-            document.streamName,
-            document.version
-        ),
-        new EventMeta(
-            document.dateCreated,
-            document.ts,
-            document.commandMeta
-        )
-    )
-}
