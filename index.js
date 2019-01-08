@@ -9,7 +9,7 @@ const MongoOplog = require('mongo-oplog');
 const EventStoreReader = require('./EventStoreReader');
 const EventLogReader = require('./EventLogReader');
 const EventStore = require('./EventStore');
-const ReadModel = require('./ReadModel');
+const ReadModelUpdater = require('./ReadModelUpdater');
 
 
 function factoryEventStore({connectUrl, oplogUrl, collectionName = 'eventStore', name}) {
@@ -140,7 +140,7 @@ module.exports.connectMultipleEventLogs = function (eventStoreDescriptors) {
     );
 };
 
-module.exports.ReadModel = ReadModel;
+module.exports.ReadModelUpdater = ReadModelUpdater;
 module.exports.dbNameFromUrlString = dbNameFromUrlString;
 
 function dbNameFromUrlString(url) {
