@@ -16,6 +16,7 @@ class EventLogReader {
         this.readmodels = [];
         this.oplogFactory = oplogFactory;
         this.countEvents = 0;
+        this.totalEventCount = null;
     }
 
     subscribeReadModel(readmodel) {
@@ -84,6 +85,7 @@ class EventLogReader {
         }
 
         const cursor = this.collection.find(query, {sort: {ts: 1}});
+        this.totalEventCount = await cursor.count();
         while (await cursor.hasNext()) {
             if (shouldAbort && await shouldAbort()) {
                 this.log(`aborted`);
