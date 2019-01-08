@@ -70,7 +70,7 @@ class EventLogReader {
         }, this.afterTimestamp);
     }
 
-    async run() {
+    async run(shouldAbort) {
         let query = {};
         let earliestTimestap = await this.getEarliestTimestap();
         if (earliestTimestap) {
@@ -85,6 +85,10 @@ class EventLogReader {
 
         const cursor = this.collection.find(query, {sort: {ts: 1}});
         while (await cursor.hasNext()) {
+            if (shouldAbort && await shouldAbort()) {
+                this.log(`aborted`);
+                return;
+            }
             const document = await cursor.next();
             await this.processDocument(document)
         }
