@@ -70,13 +70,22 @@ class ReadModelUpdater {
 	}
 
 	async _processEvent(event) {
+		let processed = false;
 		this.lastTs = event.meta.ts;
 		if (this.eventListeners[event.type]) {
-			await Promise.all(this.eventListeners[event.type].map(callback => callback(event)));
+			if ('map' in this.eventListeners[event.type]) {
+				await Promise.all(this.eventListeners[event.type].map(callback => callback(event)));
+				processed = true;
+			} else if (typeof (this.eventListeners[event.type]) === 'function') {
+				await this.eventListeners[event.type](event);
+				processed = true;
+			}
 		}
 		if (this.eventListeners['*']) {
 			await this.eventListeners['*'](event);
+			processed = true;
 		}
+		return processed;
 	}
 
 	tailingStarted(source) {
@@ -88,4 +97,4 @@ class ReadModelUpdater {
 	}
 }
 
-module.exports = ReadModel;
+module.exports = ReadModelUpdater;

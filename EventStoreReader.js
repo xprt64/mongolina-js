@@ -44,7 +44,6 @@ class EventStoreReader {
 	}
 
 	async sendEventToReadmodels(event) {
-		this.countEvents++;
 		await Promise.all(this.readmodels.map(async (readmodel) => await readmodel.processEvent(event)));
 	}
 
@@ -53,6 +52,7 @@ class EventStoreReader {
 	}
 
 	async processDocument(document) {
+		this.countEvents++;
 		await Promise.all(eventsFromCommit(document, this.name).map(async (event) => await this.sendEventToReadmodels(event)));
 	}
 
